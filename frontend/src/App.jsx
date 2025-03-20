@@ -26,7 +26,7 @@ function App() {
     })      
     // hier möchte ich, dass die Liste in der App auch aktualisiert wird
       .then((res) => res.json())
-      .then((neueAufgabe) => setTasks([...tasks, neueAufgabe]))
+      .then((neueAufgabe) => setTasks((prevTasks) => [...prevTasks, neueAufgabe]));
 
     setTitle("");
   }
@@ -36,9 +36,25 @@ function App() {
     fetch(`http://localhost:3050/delete/${id_nummer}`, {
       method: "DELETE",
     })
-
+    .then(() => {
+      // Liste im Frontend aktualisieren (ohne Backend-Aufruf)
+      setTasks((prevTasks) => prevTasks.filter(task => task.id !== id_nummer));
+    })
   }
 
+  const itemAktualisieren = (id, neuerStatus) => {
+    fetch(`http://localhost:3050/update/${id}`, {
+      method: "PATCH",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ completed: neuerStatus }),
+    })      
+    // hier möchte ich, dass die Liste in der App auch aktualisiert wird
+    setTasks((prevTasks) =>
+      prevTasks.map(task =>
+          task.id === id ? { ...task, completed: neuerStatus } : task
+      )
+  );
+  }
 
   return (
     <>
@@ -48,10 +64,10 @@ function App() {
 
       <ul>
         {// hier gehört der Code, um die To-Do Liste dynamisch zu gestalten
-        tasks.map(({id, title, completed}) => (
+        tasks.map(({id, task, completed}) => (
           <li key={id}>
-            <input type='checkbox' />
-            {title}
+            <input type='checkbox' checked={completed} onChange={() => itemAktualisieren(id, !completed)}/>
+            {task}
             <button onClick={() => itemLoeschen(id)}>X</button>
           </li>
         ))
